@@ -1,6 +1,6 @@
-package com.gtdq.netty.netty.netty06.server.work;
+package com.gtdq.netty.netty.netty06_file.server.work;
 
-import com.gtdq.netty.netty.netty06.server.handler.FileUploadServerHandler;
+import com.gtdq.netty.netty.netty06_file.server.handler.FileUploadServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -34,9 +34,9 @@ public class FileUploadServer {
                 }
             });
             ChannelFuture f = b.bind(port).sync();
-            LOGGER.info("file server 等待连接：");
+            LOGGER.info("netty06_file server 等待连接：");
             f.channel().closeFuture().sync();
-            LOGGER.info("file end");
+            LOGGER.info("netty06_file end");
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();

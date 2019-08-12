@@ -1,4 +1,4 @@
-package com.gtdq.netty.netty.netty06.model;
+package com.gtdq.netty.netty.netty06_file.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

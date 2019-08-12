@@ -1,7 +1,7 @@
-package com.gtdq.netty.netty.netty06.client.work;
+package com.gtdq.netty.netty.netty06_file.client.work;
 
-import com.gtdq.netty.netty.netty06.client.handler.FileUploadClientHandler;
-import com.gtdq.netty.netty.netty06.model.FileUploadFile;
+import com.gtdq.netty.netty.netty06_file.client.handler.FileUploadClientHandler;
+import com.gtdq.netty.netty.netty06_file.model.FileUploadFile;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;

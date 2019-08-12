@@ -49,7 +49,7 @@ public class FileServer
                         }
                     });
             ChannelFuture f=b.bind(port).sync();
-            System.out.println("Start file server at port : "+port);
+            System.out.println("Start netty06_file server at port : "+port);
             f.channel().closeFuture().sync();
         }
         catch (Exception e)

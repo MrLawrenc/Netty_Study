@@ -24,7 +24,7 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
         if (file.exists()) {
             if (!file.isFile()) {
                 //写入换行符表示文件结束
-                ctx.writeAndFlush("Not a file: " + file + CR);
+                ctx.writeAndFlush("Not a netty06_file: " + file + CR);
                 return;
             }
             //换行符表示文件结尾

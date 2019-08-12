@@ -11,10 +11,10 @@ import java.io.RandomAccessFile;
 public class RandomAccesFileDemo {
 
     public static void main(String[] args) throws Exception{
-        File file = new File("E:\\MyProject\\study_netty\\src\\main\\java\\com\\gtdq\\netty\\netty\\netty06\\client\\liu.txt");
+        File file = new File("E:\\MyProject\\study_netty\\src\\main\\java\\com\\gtdq\\netty\\netty\\netty06_file\\client\\liu.txt");
 
 
-//        RandomAccessFile randomAccessFile=new RandomAccessFile(file,"r");
+//        RandomAccessFile randomAccessFile=new RandomAccessFile(netty06_file,"r");
 //        int start=0;
 //        testRandomAccessFile(start,randomAccessFile);
 

@@ -1,6 +1,6 @@
-package com.gtdq.netty.netty.netty06.server.handler;
+package com.gtdq.netty.netty.netty06_file.server.handler;
 
-import com.gtdq.netty.netty.netty06.model.FileUploadFile;
+import com.gtdq.netty.netty.netty06_file.model.FileUploadFile;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
