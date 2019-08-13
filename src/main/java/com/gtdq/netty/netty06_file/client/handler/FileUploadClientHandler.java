@@ -1,6 +1,6 @@
-package com.gtdq.netty.netty.netty06_file.client.handler;
+package com.gtdq.netty.netty06_file.client.handler;
 
-import com.gtdq.netty.netty.netty06_file.model.FileUploadFile;
+import com.gtdq.netty.netty06_file.model.FileUploadFile;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -11,7 +11,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Objects;
-
 /**
  * @author : LiuMing
  * @date : 2019/8/12 13:44

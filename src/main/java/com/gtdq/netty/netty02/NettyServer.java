@@ -1,12 +1,13 @@
-package com.gtdq.netty.netty.netty01;
+package com.gtdq.netty.netty02;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.CharsetUtil;
 
 /**
@@ -26,12 +27,12 @@ public class NettyServer {
     public static void start() throws Exception {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(bossGroup, workGroup).channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new ChannelInitializer<Channel>() {
                     @Override
                     protected void initChannel(Channel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
-                        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4))
-                                .addLast(new StringDecoder(CharsetUtil.UTF_8)).addLast(new StringEncoder(CharsetUtil.UTF_8))
+                        pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8)).addLast(new StringEncoder(CharsetUtil.UTF_8))
                                 .addLast("my_client_handler", new MyNettyServerHandler());
                     }
                 });
@@ -39,7 +40,7 @@ public class NettyServer {
 
         ChannelFuture future = serverBootstrap.bind(ip, port).sync();
         future.channel().closeFuture().sync();
-        System.out.println("server start");
+        System.out.println("server start...........");
     }
 
     protected static void shutdown() {

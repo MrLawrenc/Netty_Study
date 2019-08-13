@@ -1,7 +1,7 @@
-package com.gtdq.netty.netty.netty06_file.client;
+package com.gtdq.netty.netty06_file.client;
 
-import com.gtdq.netty.netty.netty06_file.client.work.FileUploadClient;
-import com.gtdq.netty.netty.netty06_file.model.FileUploadFile;
+import com.gtdq.netty.netty06_file.client.work.FileUploadClient;
+import com.gtdq.netty.netty06_file.model.FileUploadFile;
 
 import java.io.File;
 

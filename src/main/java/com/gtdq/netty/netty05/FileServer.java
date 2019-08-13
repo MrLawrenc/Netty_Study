@@ -1,11 +1,4 @@
-package com.gtdq.netty.netty.netty05;
-
-/**
- * @author : LiuMingyao
- * @date : 2019/8/12 11:31
- * @description : 服务器给客户端发送文件，采用telnet连接服务器，连接上之后输入文件路径会返回文件信息
- * <p>如输入:  E:\MyProject\study_netty\src\main\java\com\gtdq\netty\netty\netty05\a.txt  控制台会输出文件内容</p>
- */
+package com.gtdq.netty.netty05;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -21,6 +14,13 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.CharsetUtil;
+
+/**
+ * @author : LiuMingyao
+ * @date : 2019/8/12 11:31
+ * @description : 服务器给客户端发送文件，采用telnet连接服务器，连接上之后输入文件路径会返回文件信息
+ * <p>如输入:  E:\MyProject\study_netty\src\main\java\com\gtdq\netty\netty05\a.txt  控制台会输出文件内容</p>
+ */
 
 public class FileServer
 {
@@ -45,7 +45,7 @@ public class FileServer
                                     //按照回车换行符对数据包进行解码
                                     new LineBasedFrameDecoder(1024),
                                     new StringDecoder(CharsetUtil.UTF_8),
-                                    new FileServerHandler());
+                                    new com.gtdq.netty.netty.netty05.FileServerHandler());
                         }
                     });
             ChannelFuture f=b.bind(port).sync();

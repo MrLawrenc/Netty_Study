@@ -1,4 +1,4 @@
-package com.gtdq.netty.netty;
+package com.gtdq.netty;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,9 +1,12 @@
-package com.gtdq.netty.netty.netty06_file.client.work;
+package com.gtdq.netty.netty06_file.client.work;
 
-import com.gtdq.netty.netty.netty06_file.client.handler.FileUploadClientHandler;
-import com.gtdq.netty.netty.netty06_file.model.FileUploadFile;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+
+import com.gtdq.netty.netty06_file.client.handler.FileUploadClientHandler;
+import com.gtdq.netty.netty06_file.model.FileUploadFile;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
