@@ -11,14 +11,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Objects;
+
 /**
  * @author : LiuMing
  * @date : 2019/8/12 13:44
  * @description :   TODO
  */
 public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
-    private int byteRead;
-    private volatile long start = 0;
     private volatile int byteSize;
     private RandomAccessFile randomAccessFile;
     private FileUploadFile fileUploadFile;
@@ -72,8 +71,8 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
             throws Exception {
 
 
-        if (Objects.isNull(msg)) {
-            //为null代表客户端和服务端建立连接成功,之后就发送文件
+        if (msg instanceof Integer) {
+            //为9999代表客户端和服务端建立连接成功,之后就发送文件
             LOGGER.info("客户端开始向服务端发送文件,文件总共有{}个字节", fileUploadLen);
             fileUploadFile.setMsgType(2);
             try {
@@ -82,15 +81,17 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
 
                 if (fileUploadFile.getStarPos() + byteSize <= fileUploadFile.getEndPos()) {//防止最后多读出null的情况
                     byte[] bytes = new byte[byteSize];//表示以多少个字节为一组开始读取
-                    if ((byteRead = randomAccessFile.read(bytes)) != -1) {
+                    if (randomAccessFile.read(bytes) != -1) {
                         fileUploadFile.setBytes(bytes);
+                        LOGGER.info("本次客户端读取了{}字节的文件，准备发往服务端", byteSize);
                         ctx.writeAndFlush(fileUploadFile);//发送消息到服务端
                     }
 
                 } else {
                     byte[] bytes = new byte[(int) (fileUploadFile.getEndPos() - fileUploadFile.getStarPos())];
-                    if ((byteRead = randomAccessFile.read(bytes)) != -1) {
+                    if (randomAccessFile.read(bytes) != -1) {
                         fileUploadFile.setBytes(bytes);
+//                        LOGGER.info("本次客户端读取了{}字节的文件，准备发往服务端", byteSize);
                         ctx.writeAndFlush(fileUploadFile);
                     }
                 }
@@ -99,33 +100,36 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
             } catch (IOException i) {
                 i.printStackTrace();
             }
-            LOGGER.info("channelActive()方法执行结束");
         } else {
-            start = Integer.valueOf(((Long) msg).intValue());
+            long start = (Long) msg;
+            fileUploadFile.setStarPos(start);
+            fileUploadFile.setMsgType(2);
             LOGGER.info("继续从第{}字节处读取文件", start);
 
-            if (start != -1 && start < fileUploadFile.getFile().length()) {
+            if (start < fileUploadFile.getEndPos()) {
                 randomAccessFile = new RandomAccessFile(fileUploadFile.getFile(), "r");
                 randomAccessFile.seek(start); //将文件定位到start
                 LOGGER.info("剩余未读取的字节长度：{}", (fileUploadFile.getEndPos() - start));
                 if (fileUploadFile.getStarPos() + byteSize <= fileUploadFile.getEndPos()) {//防止最后多读出null的情况
                     byte[] bytes = new byte[byteSize];//表示以多少个字节为一组开始读取
-                    if ((byteRead = randomAccessFile.read(bytes)) != -1) {
+                    if (randomAccessFile.read(bytes) != -1) {
                         fileUploadFile.setBytes(bytes);
                         ctx.writeAndFlush(fileUploadFile);//发送消息到服务端
                     }
 
                 } else {
-                    byte[] bytes = new byte[(int) (fileUploadFile.getEndPos() - fileUploadFile.getStarPos())];
-                    if ((byteRead = randomAccessFile.read(bytes)) != -1) {
-                        fileUploadFile.setBytes(bytes);
-                        ctx.writeAndFlush(fileUploadFile);
-                    } else {
-                        LOGGER.info("数据发送完毕");
-                        ctx.close();
+                    int temp = (int) (fileUploadFile.getEndPos() - fileUploadFile.getStarPos());
+                    if (temp > 0) {//读完最后一部分数据
+                        LOGGER.info("读取最后{}个字节", temp);
+                        byte[] bytes = new byte[temp];
+                        if (randomAccessFile.read(bytes) != -1) {
+                            fileUploadFile.setBytes(bytes);
+                            ctx.writeAndFlush(fileUploadFile);
+                        }
                     }
+                    LOGGER.info("本次数据发送完毕");
+                    ctx.close();
                 }
-
             }
         }
     }

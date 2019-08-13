@@ -26,6 +26,13 @@ public class FileUploadFile implements Serializable {
     private long byteSize;// 每次读多少个字节
     private long endPos;// 结尾位置
 
+    /**
+     * @param file_md5 文件名字
+     * @param byteSize 每次传输的字节数
+     * @author : LiuMing
+     * @date : 2019/8/13 13:06
+     * @description :   TODO
+     */
     public FileUploadFile(File file, String file_md5, long starPos, long byteSize, long endPos) {
         this.msgType = 1;
         this.file = file;

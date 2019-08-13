@@ -1,6 +1,7 @@
-package com.gtdq.netty.netty.netty06_file.server;
+package com.gtdq.netty.netty06_file.server;
 
-import com.gtdq.netty.netty.netty06_file.server.work.FileUploadServer;
+
+import com.gtdq.netty.netty06_file.server.work.FileUploadServer;
 
 /**
  * @author  : LiuMing

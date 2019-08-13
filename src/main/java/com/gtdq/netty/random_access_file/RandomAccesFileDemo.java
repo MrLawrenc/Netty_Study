@@ -11,7 +11,7 @@ import java.io.RandomAccessFile;
 public class RandomAccesFileDemo {
 
     public static void main(String[] args) throws Exception{
-        File file = new File("E:\\MyProject\\study_netty\\src\\main\\java\\com\\gtdq\\netty\\netty\\netty06_file\\client\\liu.txt");
+        File file = new File("E:\\project\\study_netty\\src\\main\\java\\com\\gtdq\\netty\\netty06_file\\client\\liu.txt");
 
 
 //        RandomAccessFile randomAccessFile=new RandomAccessFile(netty06_file,"r");
