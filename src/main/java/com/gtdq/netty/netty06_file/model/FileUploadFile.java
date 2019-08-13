@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author : LiuMing
@@ -27,18 +28,30 @@ public class FileUploadFile implements Serializable {
     private long endPos;// 结尾位置
 
     /**
-     * @param file_md5 文件名字
      * @param byteSize 每次传输的字节数
      * @author : LiuMing
      * @date : 2019/8/13 13:06
      * @description :   TODO
      */
-    public FileUploadFile(File file, String file_md5, long starPos, long byteSize, long endPos) {
+    public FileUploadFile(File file, long starPos, long byteSize, long endPos) {
+        if (Objects.isNull(file)) throw new NullPointerException("file is null");
         this.msgType = 1;
         this.file = file;
-        this.file_md5 = file_md5;
+        this.file_md5 = this.file.getName();
         this.starPos = starPos;
         this.byteSize = byteSize;
+        if (file.length() < endPos)
+            throw new IllegalArgumentException("endPos is oversize . Must Be Satisfied : endPos <= file.length() ");
         this.endPos = endPos;
+    }
+
+    public FileUploadFile(File file, long starPos, long byteSize) {
+        if (Objects.isNull(file)) throw new NullPointerException("file is null");
+        this.msgType = 1;
+        this.file = file;
+        this.file_md5 = this.file.getName();
+        this.starPos = starPos;
+        this.byteSize = byteSize;
+        this.endPos = this.file.length();
     }
 }

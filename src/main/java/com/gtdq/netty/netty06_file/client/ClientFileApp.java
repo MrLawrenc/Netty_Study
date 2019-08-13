@@ -15,8 +15,8 @@ public class ClientFileApp {
     public static void main(String[] args) throws Exception {
         File file = new File("E:\\project\\study_netty\\src\\main\\java\\com\\gtdq\\netty\\netty06_file\\client\\liu.txt");
 
-        FileUploadFile fileUploadFile = new FileUploadFile(file,"liu.txt",0,70, file.length());//end-start  就是每次从start读，每次读end-start字节
-        new FileUploadClient().connect(9527,"127.0.0.1",fileUploadFile);
+        FileUploadFile fileUploadFile = new FileUploadFile(file, 0, 70, file.length());//end-start  就是每次从start读，每次读end-start字节
+        new FileUploadClient().connect(9527, "127.0.0.1", fileUploadFile);
     }
 
 
