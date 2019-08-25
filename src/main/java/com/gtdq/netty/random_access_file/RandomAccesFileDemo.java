@@ -1,4 +1,4 @@
-package com.gtdq.netty.netty.random_access_file;
+package com.gtdq.netty.random_access_file;
 
 import java.io.File;
 import java.io.RandomAccessFile;

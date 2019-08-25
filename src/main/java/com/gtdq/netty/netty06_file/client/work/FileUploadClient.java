@@ -45,7 +45,7 @@ public class FileUploadClient {
                     });
             ChannelFuture f = b.connect(host, port).sync();
             f.channel().closeFuture().sync();
-            LOGGER.info("FileUploadClient connect()结束");
+            LOGGER.info("Client connect()结束");
         } finally {
             group.shutdownGracefully();
         }

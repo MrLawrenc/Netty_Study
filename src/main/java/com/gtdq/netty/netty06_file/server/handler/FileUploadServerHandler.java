@@ -95,6 +95,6 @@ public class FileUploadServerHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
-        LOGGER.info("FileUploadServerHandler--异常");
+        LOGGER.info("ServerHandler--异常");
     }
 }
