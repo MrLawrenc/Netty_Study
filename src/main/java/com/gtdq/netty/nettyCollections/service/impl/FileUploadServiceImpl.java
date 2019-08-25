@@ -9,24 +9,43 @@ import com.gtdq.netty.util.LogUtil;
 import com.gtdq.netty.util.ParamUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Component;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.util.List;
 
 /**
  * @author : LiuMingyao
  * @date : 2019/8/24 18:05
  * @description : TODO
  */
+@Component
 public class FileUploadServiceImpl implements FileUploadService {
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+    @Autowired
+    private KafkaTemplate<String, List> kafkalist;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Setter
     private Client client;
 
-    public FileUploadServiceImpl(Client client) {
-        if (null == client) throw new NullPointerException("client must not be null");
-        this.client = client;
-    }
+
+//    public FileUploadServiceImpl(Client client) {
+//        if (null == client) throw new NullPointerException("client must not be null");
+//        this.client = client;
+//    }
 
     @Override
     public boolean upload(FileModel file) {
@@ -35,6 +54,19 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     @Override
     public boolean upload(InputStream inputStream) {
+        byte[] bytes = null;
+        try (inputStream) {
+            bytes = inputStream.readAllBytes();
+            FileModel fileModel = new FileModel(bytes);
+            ChannelFuture future = client.getSelfChannelFuture().channel().writeAndFlush(fileModel);
+            if (future.channel().isActive()) return true;
+        } catch (IOException e) {
+            LogUtil.errorLog("inputStream.readAllBytes()出错" + ExceptionUtil.getExceptionInfo(e, true));
+        } catch (InterruptedException e) {
+            LogUtil.errorLog("向服务端写入数据出错" + ExceptionUtil.getExceptionInfo(e, true));
+        }
+        //todo 连接已经断开,发送失败 记录到kafka/redis
+        LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis");
         return false;
     }
 
@@ -56,22 +88,17 @@ public class FileUploadServiceImpl implements FileUploadService {
                 fileModel.setBytes(bytes);
                 ChannelFuture future = channelFuture.channel().writeAndFlush(fileModel);//发送消息到服务端
                 if (future.channel().isActive()) return true;
-                //todo 连接已经断开,发送失败 记录到kafka/redis
             }
-        } catch (
-                InterruptedException e) {
-            LogUtil.errorLog("获取client出错" + ExceptionUtil.getExceptionInfo(e));
-        } catch (
-                FileNotFoundException e) {
-            LogUtil.errorLog("获取RandomAccessFile出错" + ExceptionUtil.getExceptionInfo(e));
-        } catch (
-                IOException e) {
-            LogUtil.errorLog("raf.read(bytes)出错" + ExceptionUtil.getExceptionInfo(e));
+        } catch (InterruptedException e) {
+            LogUtil.errorLog("获取client出错" + ExceptionUtil.getExceptionInfo(e, true));
+        } catch (FileNotFoundException e) {
+            LogUtil.errorLog("获取RandomAccessFile出错" + ExceptionUtil.getExceptionInfo(e, true));
+        } catch (IOException e) {
+            LogUtil.errorLog("raf.read(bytes)出错" + ExceptionUtil.getExceptionInfo(e, true));
         }
+        //todo 连接已经断开,发送失败 记录到kafka/redis
         LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis,message:{}", fileModel);
         return false;
-
-
     }
 
     /**

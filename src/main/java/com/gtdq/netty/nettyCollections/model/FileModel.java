@@ -65,4 +65,8 @@ public class FileModel implements Serializable {
         this.endPos = this.file.length();
     }
 
+    public FileModel(byte[] bytes) {
+        this.bytes = bytes;
+    }
+
 }
