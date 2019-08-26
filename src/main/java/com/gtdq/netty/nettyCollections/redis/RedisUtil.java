@@ -1,11 +1,13 @@
 package com.gtdq.netty.nettyCollections.redis;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -17,7 +19,9 @@ import java.util.concurrent.TimeUnit;
  * @date : 2019/8/20 23:45
  * @description : Redis工具类
  */
+@Component
 public class RedisUtil {
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
     public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {

@@ -5,10 +5,10 @@ import com.gtdq.netty.nettyCollections.model.FileModel;
 import com.gtdq.netty.nettyCollections.server.work.Server;
 import com.gtdq.netty.nettyCollections.service.impl.FileUploadServiceImpl;
 import com.gtdq.netty.util.LogUtil;
+import io.netty.channel.ChannelFuture;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -18,21 +18,15 @@ import java.util.concurrent.TimeUnit;
  * @date : 2019/8/25 22:57
  * @description : TODO
  */
-@Controller
-public class MaiController {
-
-    @Autowired
-    private ApplicationContext context;
+@Component
+public class TestNetty {
     @Autowired
     private FileUploadServiceImpl uploadService;
+    @Autowired
+    KafkaTemplate<String, String> kafkaTemplate;
 
-    @GetMapping("/test")
-    public void run() {
-        testAllSend();
-//        testContinueSend();
-    }
 
-    void testAllSend() {
+    public void testAllSend() {
         Server server = null;
         try {
             server = new Server().init(9527);
@@ -43,19 +37,34 @@ public class MaiController {
         }
 
         Client client = Client.getInstance("127.0.0.1", 9527).init();
-        uploadService.setClient(client);
+        uploadService.initClient(client);
 
         //一次性传输整个文件
         FileModel fileModel = new FileModel(new File("e:/test.txt"));
-        boolean isSuccess = uploadService.upload(fileModel);
+
+
+
+        //模拟断线，然后让kafka去发送文件
+        client.setNeedConnection(true, kafkaTemplate);
+        ChannelFuture selfChannelFuture = client.getSelfChannelFuture();
+        try {
+            TimeUnit.SECONDS.sleep(3);
+            System.out.println("================");
+            client.closeClient();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+       /* boolean isSuccess = uploadService.upload(fileModel);
         LogUtil.infoLog("全量传输文件结果:{}", isSuccess);
 
-       /* //指定传输从start-->end的字节
+        //指定传输从start-->end的字节
         int start = 10;
         int end = 100;
         FileModel fileModel1 = new FileModel(new File(""), start, end);
         boolean b = uploadService.continueTransport(fileModel1);
-        LogUtil.infoLog("增量传输文件结果:{}", isSuccess);*/
+        LogUtil.infoLog("增量传输文件结果:{}", isSuccess);
         try {
             TimeUnit.SECONDS.sleep(3);
             if (server != null) {
@@ -63,11 +72,11 @@ public class MaiController {
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
 
     }
 
-    void testContinueSend() {
+    public void testContinueSend() {
         Server server = null;
         try {
             server = new Server().init(9527);
@@ -78,7 +87,7 @@ public class MaiController {
         }
 
         Client client = Client.getInstance("127.0.0.1", 9527).init();
-        uploadService.setClient(client);
+        uploadService.initClient(client);
 
         //一次性传输整个文件
 //        FileModel fileModel = new FileModel(new File("e:/test.txt"), 0, 20);
@@ -87,7 +96,13 @@ public class MaiController {
         LogUtil.infoLog("增量传输文件结果:{}", isSuccess);
 
 
-        client.setNeedConnection(true);
+        client.setNeedConnection(true, kafkaTemplate);
         client.closeClient();
+
+        try {
+            TimeUnit.SECONDS.sleep(6);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

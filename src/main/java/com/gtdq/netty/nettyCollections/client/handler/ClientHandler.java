@@ -52,7 +52,6 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         if (client.isNeedConnection()) {
             //断线重连
-            ctx.close();
             client.doReconnection();
         } else {
             super.channelInactive(ctx);

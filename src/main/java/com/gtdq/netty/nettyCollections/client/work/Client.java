@@ -1,6 +1,7 @@
 package com.gtdq.netty.nettyCollections.client.work;
 
 import com.gtdq.netty.nettyCollections.client.handler.ClientHandler;
+import com.gtdq.netty.util.ExceptionUtil;
 import com.gtdq.netty.util.LogUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -16,6 +17,10 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +48,12 @@ public class Client {
     //断线重连次数
     private int reConnectionCount;
     private boolean flag = true;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
 
-    public void setNeedConnection(boolean needConnection) {
+    public void setNeedConnection(boolean needConnection, KafkaTemplate<String, String> kafkaTemplate) {
         this.needConnection = needConnection;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     /**
@@ -98,7 +105,7 @@ public class Client {
      * @date : 2019/8/23 22:18
      * @description :   获取一个连接(该连接是当前客户端对象持有的)
      */
-    public ChannelFuture getSelfChannelFuture() throws InterruptedException {
+    public ChannelFuture getSelfChannelFuture() {
         return null == future || !future.channel().isActive() ? this.future = getNewChannelFuture() : this.future;
     }
 
@@ -107,7 +114,7 @@ public class Client {
      * @date : 2019/8/24 16:41
      * @description :   获取一个新的ChannelFuture
      */
-    public ChannelFuture getNewChannelFuture() throws InterruptedException {
+    public ChannelFuture getNewChannelFuture() {
         return getChannelFutureList(this.ip, this.port, 1).get(0);
     }
 
@@ -117,10 +124,15 @@ public class Client {
      * @description :   获取多连接集合
      * <p>客户端需要多个连接的时候使用</p>
      */
-    public List<ChannelFuture> getChannelFutureList(String ip, int port, int connectionNum) throws InterruptedException {
+    public List<ChannelFuture> getChannelFutureList(String ip, int port, int connectionNum) {
         List<ChannelFuture> channelFutures = new ArrayList<>(connectionNum);
         for (int i = 0; i < connectionNum; i++) {
-            ChannelFuture future = bootstrap.connect(ip, port).sync();
+            ChannelFuture future = null;
+            try {
+                future = bootstrap.connect(ip, port).sync();
+            } catch (InterruptedException e) {
+                LogUtil.errorLog("client获取future异常，" + ExceptionUtil.getExceptionInfo(e, true));
+            }
             channelFutures.add(future);
         }
         return channelFutures;
@@ -164,8 +176,20 @@ public class Client {
                         public void operationComplete(ChannelFuture f) throws Exception {
                             //如果重连失败，则调用ChannelInactive方法，再次出发重连事件，一直尝试12次，如果失败则不再重连
                             if (f.isSuccess()) {
-                                LOGGER.info("第{}次重连成功.............", reConnectionCount);
+                                LOGGER.info("第{}次重连成功(激活kafka重新发送失败的数据).............", reConnectionCount);
                                 reConnectionCount = 0;
+                                ListenableFuture<SendResult<String, String>> send = kafkaTemplate.send("sendFile", "ConnectionAvailable", "true");
+                                send.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
+                                    @Override
+                                    public void onFailure(Throwable throwable) {
+                                        LogUtil.warnLog("kafka没有收到连接可用的状态消息,不会立即重发之前发送失败的消息.............");
+                                    }
+
+                                    @Override
+                                    public void onSuccess(SendResult<String, String> stringStringSendResult) {
+                                        LogUtil.infoLog("kafka收到连接可用的状态消息，即将重发之前发送失败的消息.............");
+                                    }
+                                });
                             } else {
                                 LOGGER.info("第{}次重连失败.............", reConnectionCount);
                                 doReconnection();

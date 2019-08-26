@@ -8,6 +8,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +42,11 @@ public class FileUploadServer {
                 }
             });
             ChannelFuture f = b.bind(port).sync();
+            f.addListener(new GenericFutureListener<Future<? super Void>>() {
+                @Override
+                public void operationComplete(Future<? super Void> future) throws Exception {
+                }
+            });
             LOGGER.info("netty06_file server 等待连接：");
             f.channel().closeFuture().sync();
             LOGGER.info("netty06_file end");

@@ -24,7 +24,7 @@ import java.io.RandomAccessFile;
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ServerHandler.class);
-    String filePath;
+    private String filePath;
 
     public ServerHandler(String filePath) {
         this.filePath = filePath;
@@ -63,8 +63,8 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             if (msgType == MsgType.TANSFILE) { //传输文件
                 File file = new File(filePath + "/" + fileModel.getFile_md5());
                 //存在就清空
-                if (file.exists()) {
-                    try (FileWriter fileWriter = new FileWriter(file);) {
+                if (file.exists() && file.length() > 0) {
+                    try (FileWriter fileWriter = new FileWriter(file)) {
                         fileWriter.write("");
                         fileWriter.flush();
                         //fileWriter.close();会自动释放try里面的资源
@@ -75,9 +75,10 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 } else {
                     createParentDir(file);//父目录没有就创建
                     file.createNewFile();
-                    try (FileOutputStream outputStream = new FileOutputStream(file);) {
+                    try (FileOutputStream outputStream = new FileOutputStream(file)) {
                         outputStream.write(fileModel.getBytes());
                         ctx.writeAndFlush(MsgType.RECEIVESUCCESS);
+                        LogUtil.infoLog("服务端保存文件{}成功，path:{}", file.getName(), file.getPath());
                     } catch (Exception e) {
                         LogUtil.errorLog("文件{}不存在，写入内容发生异常" + ExceptionUtil.getExceptionInfo(e, true), file.getName());
                         ctx.writeAndFlush(MsgType.RECEIVEFALSE);
