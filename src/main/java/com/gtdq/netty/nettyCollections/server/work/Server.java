@@ -58,6 +58,7 @@ public class Server {
                  *     用于临时存放已完成三次握手的请求的队列的最大长度。如果未设置或所设置的值小于1，Java将使用默认值50
                  * */
                 .option(ChannelOption.SO_BACKLOG, 1024)
+//                .option(ChannelOption.SO_KEEPALIVE, true)//长连接
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new ChannelInitializer<Channel>() {
 

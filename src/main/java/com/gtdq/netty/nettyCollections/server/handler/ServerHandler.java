@@ -85,7 +85,11 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     }
 
                 }
-            } else if (msgType == MsgType.CONTINUETRANS) { //继续传输请求
+            } else if (msgType == MsgType.CONTINUETRANS || msgType == MsgType.CLIENTCONTINUE_LAST) { //继续传输请求 or 分片的最后一次请求
+                if (msgType==MsgType.CLIENTCONTINUE_LAST){
+                    LogUtil.infoLog("服务端接收到最后一块分片，准备写入.........");
+                }
+
                 File file = new File(filePath + "/" + fileModel.getFile_md5());
                 if (file.exists()) {
                     try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) {// ;r: 只读模式 rw:读写模式
@@ -100,8 +104,40 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     LogUtil.errorLog("文件{}不存在,无法追加内容", file.getName());
                     ctx.writeAndFlush(MsgType.RECEIVEFALSE);
                 }
-            } else if (msg == MsgType.CONNECTION) {//建立连接请求
+            } else if (msgType == MsgType.CLIENTCONTINUE) {//client文件超过了100m，需要进行分片传输
+                File file = new File(filePath + "/" + fileModel.getFile_md5());
+                if (!file.exists()) {
+                    createParentDir(file);
+                    file.createNewFile();
+                }
+
+                try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) {// ;r: 只读模式 rw:读写模式
+                    randomAccessFile.seek(fileModel.getStartPos());//移动文件记录指针的位置,
+                    randomAccessFile.write(fileModel.getBytes());//调用了seek（start）方法，是指把文件的记录指针定位到start字节的位置。也就是说程序将从start字节开始写数据
+
+
+                    fileModel.setBytes(null);
+                    fileModel.setStartPos(fileModel.getEndPos());
+                    if (fileModel.getStartPos() + fileModel.getByteSize() >= fileModel.getFile().length()) {
+                        fileModel.setEndPos(fileModel.getFile().length());
+                        fileModel.setMsgType(MsgType.CLIENTCONTINUE_LAST);
+                        fileModel.setByteSize((int) (fileModel.getEndPos()-fileModel.getStartPos()));
+                        LogUtil.infoLog("写入最后一块分片，数据从{}---->{}", fileModel.getStartPos(), fileModel.getEndPos());
+                    } else {
+
+                        fileModel.setEndPos(fileModel.getEndPos() + fileModel.getByteSize());
+                        LogUtil.infoLog("写入本次分片，数据从{}---->{}", fileModel.getStartPos(), fileModel.getEndPos());
+                    }
+                    ctx.writeAndFlush(fileModel);
+                } catch (Exception e) {
+                    LogUtil.errorLog("文件{} 写入内容发生异常" + ExceptionUtil.getExceptionInfo(e, true), file.getName());
+                    ctx.writeAndFlush(MsgType.RECEIVEFALSE);
+                }
+
+            } else if (msgType == MsgType.CONNECTION) {//建立连接请求
                 LogUtil.infoLog("建立连接请求");
+            } else {
+                LogUtil.infoLog("不知道的消息类型");
             }
 
         } else {

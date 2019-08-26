@@ -13,8 +13,9 @@ public class NettyApplication {
     public static void main(String[] args) {
         SpringApplication.run(NettyApplication.class, args);
         TestNetty bean = SpringContextUtil.getBean(TestNetty.class);
-        bean.testAllSend();
+//        bean.testAllSend();
 //        bean.testContinueSend();
+        bean.testAllSendConcur();
     }
 
 }

@@ -2,8 +2,11 @@ package com.gtdq.netty.nettyCollections.client.handler;
 
 import com.gtdq.netty.nettyCollections.client.work.Client;
 import com.gtdq.netty.nettyCollections.model.FileModel;
+import com.gtdq.netty.nettyCollections.model.MsgType;
+import com.gtdq.netty.nettyCollections.service.impl.FileUploadServiceImpl;
 import com.gtdq.netty.util.ExceptionUtil;
 import com.gtdq.netty.util.LogUtil;
+import com.gtdq.netty.util.SpringContextUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -74,9 +77,22 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
      * @description :   当前channel从远端读取到数据的时候会触发
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-            throws Exception {
-
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (msg instanceof FileModel) {//需要继续传输文件的情况
+            MsgType msgType = ((FileModel) msg).getMsgType();
+            if (msgType == MsgType.CLIENTCONTINUE || MsgType.CLIENTCONTINUE_LAST == msgType) {
+                if (msgType == MsgType.CLIENTCONTINUE_LAST) {
+                    LogUtil.infoLog("传输最后一块分片到服务端.........");
+                }
+                //分片继续传输
+                FileUploadServiceImpl uploadService = SpringContextUtil.getBean(FileUploadServiceImpl.class);
+                uploadService.continueTransport((FileModel) msg);
+            }
+        } else if (msg == MsgType.RECEIVESUCCESS) {
+            LogUtil.infoLog("服务端接收数据成功!");
+        } else if (msg == MsgType.RECEIVEFALSE) {
+            LogUtil.infoLog("服务端接收数据失败!");
+        }
 
     }
 
