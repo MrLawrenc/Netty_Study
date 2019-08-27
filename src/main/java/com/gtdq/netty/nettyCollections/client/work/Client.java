@@ -4,10 +4,7 @@ import com.gtdq.netty.nettyCollections.client.handler.ClientHandler;
 import com.gtdq.netty.util.ExceptionUtil;
 import com.gtdq.netty.util.LogUtil;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -94,7 +91,7 @@ public class Client {
                         //ObjectDecoder第一个参数是:对象序列化后的最大字节数组长度设置，可以设为1024*1024，即为防止异常码流和解码错位导致的内存溢出，将对象序列化后的最大字节数组长度设为1M
                         //创建线程安全的WeakReferenceMap对类加载器进行缓存,后面可以跟this.getClass().getClassLoader，也可以直接设为null
                         pipeline.addLast(new ObjectDecoder(ClassResolvers.weakCachingConcurrentResolver(null)));
-                        pipeline.addLast(new ClientHandler(client));
+                        pipeline.addLast("myHandler", new ClientHandler(client));
                     }
                 });
         return this;
@@ -107,6 +104,18 @@ public class Client {
      */
     public ChannelFuture getSelfChannelFuture() {
         return null == future || !future.channel().isActive() ? this.future = getNewChannelFuture() : this.future;
+    }
+
+    public ChannelHandlerContext test() {
+        ClientHandler myHandler = (ClientHandler) client.getSelfChannelFuture().channel().pipeline().get("myHandler");//得到自己的handler
+        /**
+         * 获得自己Handler里面的ctx，这个对象也可以write，和channel的write不同的是：
+         * ctx的write是从自身这个Handler开始，经过在它之前定义的Handler，依次执行的
+         * 而channel的write则是从pipeline的最后一个Handler开始向前依次执行
+         * 因此:当不需要经过所有的pipeline链时，使用ctx的Handler可以提高性能
+         */
+        ChannelHandlerContext ctx = myHandler.getCtx();
+        return ctx;
     }
 
     /**
