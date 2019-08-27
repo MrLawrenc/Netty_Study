@@ -36,7 +36,7 @@ public class TestNetty {
     }
 
     /*
-     * 测试全量并发
+     * 测试全量并发，(优化为大文件分片传输，不然会oom)
      * */
     public void testAllSendConcur() {
         startServer();
@@ -83,6 +83,11 @@ public class TestNetty {
         LogUtil.infoLog("全量传输文件结果:{}", isSuccess);
     }
 
+    /**
+     * @author : LiuMing
+     * @date : 2019/8/27 9:30
+     * @description :   全量发送
+     */
     public void testAllSend() {
         startServer();
 
@@ -125,6 +130,11 @@ public class TestNetty {
 
     }
 
+    /**
+     * @author : LiuMing
+     * @date : 2019/8/27 9:30
+     * @description :   指定发送增量
+     */
     public void testContinueSend() {
         Server server = null;
         try {

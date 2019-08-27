@@ -65,6 +65,9 @@ public class Server {
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
+
+                        /*ByteBuf delimiter = Unpooled.copiedBuffer("&".getBytes());//粘包处理，以字符&分割客户端发来的信息
+                        ch.pipeline().addLast(new DelimiterBasedFrameDecoder(1024,delimiter));*/
                         pipeline.addLast(new ObjectEncoder());
                         pipeline.addLast(new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingConcurrentResolver(null))); // 最大长度
                         pipeline.addLast(new ServerHandler(server.filePath));
