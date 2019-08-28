@@ -9,6 +9,7 @@ import com.gtdq.netty.util.LogUtil;
 import com.gtdq.netty.util.SpringContextUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,8 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
 
     private final Client client;
+    @Getter
+    private ChannelHandlerContext ctx;
 
     public ClientHandler(Client client) {
         this.client = client;
@@ -68,6 +71,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
      * <p>当前channel激活的时候</p>
      */
     public void channelActive(ChannelHandlerContext ctx) {
+        this.ctx=ctx;
         LOGGER.info("正在和服务{}端建立连接.....", ctx.channel().remoteAddress());
     }
 
