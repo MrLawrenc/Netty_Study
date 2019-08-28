@@ -74,6 +74,13 @@ public class FileUploadServiceImpl implements FileUploadService {
             bytes = inputStream.readAllBytes();
             fileModel = new FileModel(bytes);
             ChannelFuture future = client.getSelfChannelFuture().channel().writeAndFlush(fileModel);
+            final FileModel fileModel1=fileModel;
+            future.addListener((ChannelFuture writeFuture) -> {
+                if (!writeFuture.isSuccess()) {
+                    LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis");
+                    redisUtil.lLeftPush("sendFail:1", fileModel1);
+                }
+            });
             if (future.channel().isActive()) return true;
         } catch (IOException e) {
             LogUtil.errorLog("inputStream.readAllBytes()出错" + ExceptionUtil.getExceptionInfo(e, true));
@@ -112,7 +119,13 @@ public class FileUploadServiceImpl implements FileUploadService {
                 fileModel.setBytes(bytes);
 //                int a=1/0;//模拟出错就，记录到redis
                 ChannelFuture future = channelFuture.channel().writeAndFlush(fileModel);//发送消息到服务端
-                if (future.channel().isActive()) return true;
+                final FileModel fileModel1=fileModel;
+                future.addListener((ChannelFuture writeFuture) -> {
+                    if (!writeFuture.isSuccess()) {
+                        LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis");
+                        redisUtil.lLeftPush("sendFail:1", fileModel1);
+                    }
+                });
             }
         } catch (FileNotFoundException e) {
             LogUtil.errorLog("获取RandomAccessFile出错" + ExceptionUtil.getExceptionInfo(e, true));
@@ -160,7 +173,13 @@ public class FileUploadServiceImpl implements FileUploadService {
             if (raf.read(bytes) != -1) {
                 fileModel.setBytes(bytes);
                 ChannelFuture future = channel.writeAndFlush(fileModel);//发送消息到服务端
-                if (future.channel().isActive()) return true;
+                final FileModel fileModel1=fileModel;
+                future.addListener((ChannelFuture writeFuture) -> {
+                    if (!writeFuture.isSuccess()) {
+                        LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis");
+                        redisUtil.lLeftPush("sendFail:1", fileModel1);
+                    }
+                });
             }
         } catch (IOException e) {
             LogUtil.errorLog("获取RandomAccessFile异常" + ExceptionUtil.getExceptionInfo(e, true));
