@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天-我是小红</title>
+</head>
+<body>
+<input type="text" id="msg">
+<input value="发送消息" type="button" onclick="senMsg()"><br/>
+
+接收到的消息为:
+<p id="serverMsg" style="background-color: azure"></p>
+<script>
+    var websocket = null;
+    if (window.WebSocket) {
+        websocket = new WebSocket("ws://127.0.0.1:9527/ws");
+        websocket.onopen = function (ev) {
+            console.log("小红和服务端建立连接")
+            websocket.send("1::xh");
+        };
+        websocket.onmessage = function (ev) {
+            console.log("接收到服务器消息==》" + ev.data);
+            var serverMsg = document.getElementById("serverMsg");
+            serverMsg.innerHTML += ev.data + "<br/>";
+        }
+    }
+    function senMsg() {
+        var msg = document.getElementById("msg").value;
+        alert(msg)
+        websocket.send("2:"+msg+":xh");
+    }
+</script>
+</body>
+</html>
