@@ -99,8 +99,13 @@ public final class LogUtil {
      * 记录异常日志信息
      */
     @Deprecated
-    public void exceptionLog(Class clz, String str, Object... params) {
+    public void warnLog(Class clz, String str, Object... params) {
         getLogger(clz).warn(str, params);
+    }
+
+    @Deprecated
+    public void errorLog(Class clz, String str, Object... params) {
+        getLogger(clz).error(str, params);
     }
 
 }

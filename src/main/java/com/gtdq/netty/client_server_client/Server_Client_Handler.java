@@ -41,6 +41,7 @@ public class Server_Client_Handler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object s) throws Exception {
+
         System.out.println("中转站服务端收到消息 ：" + s);
 
         /**
@@ -48,8 +49,7 @@ public class Server_Client_Handler extends ChannelInboundHandlerAdapter {
          * 重点在于client和server使用同一个group，使用ctx.channel().eventLoop()来获取。
          */
         Bootstrap bootstrap = new Bootstrap();
-        bootstrap
-                .channel(NioSocketChannel.class)
+        bootstrap.channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
@@ -61,6 +61,7 @@ public class Server_Client_Handler extends ChannelInboundHandlerAdapter {
         ChannelFuture connect = bootstrap.connect("127.0.0.1", 6667).sync();
         System.out.println(connect.channel());
         connect.channel().writeAndFlush(s);
+        connect.addListener(ChannelFutureListener.CLOSE);
 //        while (connect.isSuccess() && connect.channel().isActive()) {
 //            System.out.println("发给下个服务端。。。。。。。。。。。。。。");
 //            //再将消息转发给下一个服务端
@@ -74,6 +75,6 @@ public class Server_Client_Handler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
-        System.out.println("异常服务端1：" );
+        System.out.println("异常服务端1：");
     }
 }

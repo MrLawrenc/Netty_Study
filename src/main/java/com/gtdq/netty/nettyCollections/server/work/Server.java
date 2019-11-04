@@ -58,12 +58,16 @@ public class Server {
                  *     用于临时存放已完成三次握手的请求的队列的最大长度。如果未设置或所设置的值小于1，Java将使用默认值50
                  * */
                 .option(ChannelOption.SO_BACKLOG, 1024)
+//                .option(ChannelOption.SO_KEEPALIVE, true)//长连接
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new ChannelInitializer<Channel>() {
 
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
+
+                        /*ByteBuf delimiter = Unpooled.copiedBuffer("&".getBytes());//粘包处理，以字符&分割客户端发来的信息
+                        ch.pipeline().addLast(new DelimiterBasedFrameDecoder(1024,delimiter));*/
                         pipeline.addLast(new ObjectEncoder());
                         pipeline.addLast(new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingConcurrentResolver(null))); // 最大长度
                         pipeline.addLast(new ServerHandler(server.filePath));

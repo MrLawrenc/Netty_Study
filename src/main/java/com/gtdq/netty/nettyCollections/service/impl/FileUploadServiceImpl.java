@@ -11,6 +11,7 @@ import com.gtdq.netty.util.LogUtil;
 import com.gtdq.netty.util.ParamUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import lombok.Setter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -46,6 +47,13 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     private static Client client;
 
+    /**
+     * 分片提高并发效率，并且大文件并发的时候可以避免oom异常(测试同开三个线程每个线程同时传输1g的文件，发生了oom)
+     */
+    @Setter//分片传输的每一片大小，默认100m
+    private int segmentFileSize = 1024 * 1024 * 100;//默认100m
+    @Setter//文件达到多少就采用分片传输
+    private int segmentFileMax = 1024 * 1024 * 100;//默认100m
 
     public FileUploadServiceImpl initClient(Client client) {
         if (null == client) throw new NullPointerException("client must not be null");
@@ -66,6 +74,13 @@ public class FileUploadServiceImpl implements FileUploadService {
             bytes = inputStream.readAllBytes();
             fileModel = new FileModel(bytes);
             ChannelFuture future = client.getSelfChannelFuture().channel().writeAndFlush(fileModel);
+            final FileModel fileModel1=fileModel;
+            future.addListener((ChannelFuture writeFuture) -> {
+                if (!writeFuture.isSuccess()) {
+                    LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis");
+                    redisUtil.lLeftPush("sendFail:1", fileModel1);
+                }
+            });
             if (future.channel().isActive()) return true;
         } catch (IOException e) {
             LogUtil.errorLog("inputStream.readAllBytes()出错" + ExceptionUtil.getExceptionInfo(e, true));
@@ -76,13 +91,23 @@ public class FileUploadServiceImpl implements FileUploadService {
         return false;
     }
 
+
     /**
      * @author : LiuMing
      * @date : 2019/8/24 18:26
-     * @description :   传输FileModel对象(全量)
+     * @description :   传输FileModel对象(全量)(当大于100m就分片传输，这样大文件并发传输的时候不会oom)
      */
     @Override
     public boolean transport(FileModel fileModel) {
+        if (null == fileModel) throw new NullPointerException("fileModel param is null");
+        if (fileModel.getFile().length() > segmentFileMax) {
+            //大于100m就分片传输
+            fileModel.setMsgType(MsgType.CLIENTCONTINUE);
+            fileModel.setStartPos(0);
+            fileModel.setEndPos(segmentFileSize);
+            fileModel.setByteSize(segmentFileSize);
+            return continueTransport(fileModel);
+        }
         fileModel.setMsgType(MsgType.TANSFILE);
         try (RandomAccessFile raf = new RandomAccessFile(fileModel.getFile(), "r");) {
             ChannelFuture channelFuture = client.getSelfChannelFuture();
@@ -94,7 +119,13 @@ public class FileUploadServiceImpl implements FileUploadService {
                 fileModel.setBytes(bytes);
 //                int a=1/0;//模拟出错就，记录到redis
                 ChannelFuture future = channelFuture.channel().writeAndFlush(fileModel);//发送消息到服务端
-                if (future.channel().isActive()) return true;
+                final FileModel fileModel1=fileModel;
+                future.addListener((ChannelFuture writeFuture) -> {
+                    if (!writeFuture.isSuccess()) {
+                        LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis");
+                        redisUtil.lLeftPush("sendFail:1", fileModel1);
+                    }
+                });
             }
         } catch (FileNotFoundException e) {
             LogUtil.errorLog("获取RandomAccessFile出错" + ExceptionUtil.getExceptionInfo(e, true));
@@ -120,7 +151,9 @@ public class FileUploadServiceImpl implements FileUploadService {
             String[] paramNames = ParamUtil.getParamNames(getClass(), "continueTransport");
             throw new NullPointerException(paramNames[0] + " is null");
         }
-        fileModel.setMsgType(MsgType.CONTINUETRANS);
+        if (fileModel.getMsgType() != MsgType.CLIENTCONTINUE && fileModel.getMsgType() != MsgType.CLIENTCONTINUE_LAST) {
+            fileModel.setMsgType(MsgType.CONTINUETRANS);
+        }
         long start = fileModel.getStartPos();
         LogUtil.infoLog("继续传输从第{}字节到第{}字节的数据", start, fileModel.getEndPos());
         /* try (FileInputStream d = new FileInputStream(new File(""))) {  //try-source
@@ -140,7 +173,13 @@ public class FileUploadServiceImpl implements FileUploadService {
             if (raf.read(bytes) != -1) {
                 fileModel.setBytes(bytes);
                 ChannelFuture future = channel.writeAndFlush(fileModel);//发送消息到服务端
-                if (future.channel().isActive()) return true;
+                final FileModel fileModel1=fileModel;
+                future.addListener((ChannelFuture writeFuture) -> {
+                    if (!writeFuture.isSuccess()) {
+                        LogUtil.errorLog("本次数据传输失败，即将记录到kafka/redis");
+                        redisUtil.lLeftPush("sendFail:1", fileModel1);
+                    }
+                });
             }
         } catch (IOException e) {
             LogUtil.errorLog("获取RandomAccessFile异常" + ExceptionUtil.getExceptionInfo(e, true));
@@ -168,8 +207,8 @@ public class FileUploadServiceImpl implements FileUploadService {
         if (consumer.key().equals("ConnectionAvailable") && consumer.value().equals("true")) {
 
 
+            LogUtil.warnLog("kafka开始处理全量发送失败的数据...................");
             while (true) {
-                LogUtil.warnLog("kafka收到了重发全量文件的消息，开始处理全量发送失败的数据...................");
                 //todo 拿到redis里面存取的全量发送失败的数据
                 FileModel fileModel = JSON.parseObject(String.valueOf(redisUtil.lRightPop("sendFail:1")), FileModel.class);
                 if (null == fileModel) break;
@@ -184,8 +223,8 @@ public class FileUploadServiceImpl implements FileUploadService {
                 }
             }
 
+            LogUtil.warnLog("kafka开始处理增量发送失败的数据...................");
             while (true) {
-                LogUtil.warnLog("kafka收到了重发增量文件的消息，开始处理增量发送失败的数据...................");
                 //todo 拿到redis里面存取的全量发送失败的数据
                 FileModel continueFileModel = JSON.parseObject(String.valueOf(redisUtil.lRightPop("sendFail:2")), FileModel.class);
                 if (null == continueFileModel) break;

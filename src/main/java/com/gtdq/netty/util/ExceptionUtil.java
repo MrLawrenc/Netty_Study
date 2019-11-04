@@ -23,7 +23,7 @@ public class ExceptionUtil {
     /**
      * @author : LiuMing
      * @date : 2019/8/25 11:52
-     * @description :  isAdd <code>true</code>该异常信息是否是追加到其他内容会面
+     * @description :  isAdd <code>true</code>该异常信息是否是追加到其他内容后面
      */
     public static String getExceptionInfo(Throwable t, boolean isAdd) {
         String prefix = "\t异常信息如下:\n";
@@ -31,5 +31,12 @@ public class ExceptionUtil {
         t.printStackTrace(new PrintWriter(stringWriter, true));
         String s = stringWriter.getBuffer().toString();
         return isAdd ? prefix + s : s;
+    }
+
+    public static String appendExceptionInfo(Throwable t) {
+        String prefix = "\t异常信息如下:\n";
+        StringWriter stringWriter = new StringWriter();
+        t.printStackTrace(new PrintWriter(stringWriter, true));
+        return prefix + stringWriter.getBuffer().toString();
     }
 }

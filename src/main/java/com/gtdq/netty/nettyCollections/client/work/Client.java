@@ -12,8 +12,7 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Setter;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.util.concurrent.ListenableFuture;
@@ -30,7 +29,6 @@ import java.util.Timer;
  */
 
 public class Client {
-    private final static Logger LOGGER = LoggerFactory.getLogger(Client.class);
 
     public static Client client;
     private ChannelFuture future;
@@ -40,16 +38,32 @@ public class Client {
 
     private String ip;
     private int port;
+
+
     @Getter
     private boolean needConnection = false;
-    //断线重连次数
+    //当前是第几次断线重连
     private int reConnectionCount;
+    //断线重连最大次数,默认6次,每一次间隔4 8 16 32 64 128秒
+    @Setter
+    private int reConnectionLimit;
     private boolean flag = true;
+
     private KafkaTemplate<String, String> kafkaTemplate;
 
 
+    /**
+     * @author : LiuMing
+     * @date : 2019/8/27 9:36
+     * @description :   设置为需要断线重连，引入kafka是在重连成功之后会通知kafka
+     */
     public void setNeedConnection(boolean needConnection, KafkaTemplate<String, String> kafkaTemplate) {
+        setNeedConnection(needConnection, 6, kafkaTemplate);
+    }
+
+    public void setNeedConnection(boolean needConnection, int reConnectionLimit, KafkaTemplate<String, String> kafkaTemplate) {
         this.needConnection = needConnection;
+        this.reConnectionLimit = reConnectionLimit;
         this.kafkaTemplate = kafkaTemplate;
     }
 
@@ -134,6 +148,7 @@ public class Client {
      * <p>客户端需要多个连接的时候使用</p>
      */
     public List<ChannelFuture> getChannelFutureList(String ip, int port, int connectionNum) {
+        if (null == bootstrap) throw new NullPointerException("请先实例化bootstrap.  client.init()");
         List<ChannelFuture> channelFutures = new ArrayList<>(connectionNum);
         for (int i = 0; i < connectionNum; i++) {
             ChannelFuture future = null;
@@ -170,13 +185,10 @@ public class Client {
      * <code>
      */
     public void doReconnection() {
-
-        Client client = this;
-        if (reConnectionCount < 4) {
-            reConnectionCount++;
-            int timeout = 2000 * reConnectionCount;
+        if (reConnectionCount++ < this.reConnectionLimit) {
+            int timeout = 1000 * (2 << reConnectionCount);
             Timer timer = new Timer();
-            LOGGER.info("第{}次重连将在{}ms之后进行!", reConnectionCount, timeout);
+            LogUtil.infoLog("第{}次重连将在{}ms之后进行!", reConnectionCount, timeout);
             timer.schedule(new java.util.TimerTask() {
                 @Override
                 public void run() {
@@ -185,7 +197,7 @@ public class Client {
                         public void operationComplete(ChannelFuture f) throws Exception {
                             //如果重连失败，则调用ChannelInactive方法，再次出发重连事件，一直尝试12次，如果失败则不再重连
                             if (f.isSuccess()) {
-                                LOGGER.info("第{}次重连成功(激活kafka重新发送失败的数据).............", reConnectionCount);
+                                LogUtil.infoLog("第{}次重连成功(激活kafka重新发送失败的数据).............", reConnectionCount);
                                 reConnectionCount = 0;
                                 ListenableFuture<SendResult<String, String>> send = kafkaTemplate.send("sendFile", "ConnectionAvailable", "true");
                                 send.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
@@ -200,7 +212,7 @@ public class Client {
                                     }
                                 });
                             } else {
-                                LOGGER.info("第{}次重连失败.............", reConnectionCount);
+                                LogUtil.infoLog("第{}次重连失败.............", reConnectionCount);
                                 doReconnection();
                             }
                         }
@@ -208,7 +220,7 @@ public class Client {
                 }
             }, timeout);
         } else {
-            LOGGER.info("重连次数过多，不进行重连，即将推出客户端............");
+            LogUtil.infoLog("重连次数过多，不进行重连，即将推出客户端............");
             flag = false;
             System.exit(0);
         }
