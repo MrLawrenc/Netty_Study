@@ -4,12 +4,13 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 /**
@@ -41,7 +42,6 @@ public class Server_Client_Handler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object s) throws Exception {
-
         System.out.println("中转站服务端收到消息 ：" + s);
 
         /**
@@ -57,19 +57,16 @@ public class Server_Client_Handler extends ChannelInboundHandlerAdapter {
                         pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8)).addLast(new StringEncoder(CharsetUtil.UTF_8))
                                 .addLast("client2", new ClientHandler());
                     }
-                }).group(new NioEventLoopGroup());
-        ChannelFuture connect = bootstrap.connect("127.0.0.1", 6667).sync();
-        System.out.println(connect.channel());
-        connect.channel().writeAndFlush(s);
-        connect.addListener(ChannelFutureListener.CLOSE);
-//        while (connect.isSuccess() && connect.channel().isActive()) {
-//            System.out.println("发给下个服务端。。。。。。。。。。。。。。");
-//            //再将消息转发给下一个服务端
-//
-//            break;
-//        }
-
-
+                }).group(ctx.channel().eventLoop());
+        ChannelFuture connect = bootstrap.connect("127.0.0.1", 6667);
+        connect.addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                System.out.println(connect.channel());
+                connect.channel().writeAndFlush(s);
+                connect.addListener(ChannelFutureListener.CLOSE);
+            }
+        });
     }
 
     @Override
