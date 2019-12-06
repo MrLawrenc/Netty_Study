@@ -45,7 +45,7 @@ public class FileServer
                                     //按照回车换行符对数据包进行解码
                                     new LineBasedFrameDecoder(1024),
                                     new StringDecoder(CharsetUtil.UTF_8),
-                                    new com.gtdq.netty.netty.netty05.FileServerHandler());
+                                    new com.gtdq.netty.netty05.FileServerHandler());
                         }
                     });
             ChannelFuture f=b.bind(port).sync();

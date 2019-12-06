@@ -12,10 +12,10 @@ import java.net.Socket;
 public class OldClient {
     public static void main(String[] args) throws Exception {
         Socket socket = new Socket("localhost", 8899);
-
         //文件4g+
         String path = "E:\\CiKeXinTiao8AoDeSai\\DataPC_patch_01.forge";
-        FileInputStream inputStream = new FileInputStream(path);
+        String p = "E:\\ggg6.7z";
+        FileInputStream inputStream = new FileInputStream(p);
 
         DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
@@ -32,5 +32,6 @@ public class OldClient {
         }
         //发送总字节数:1727150186,耗时:9386 zero copy 1563
         System.out.println("发送总字节数:" + total + "," + "耗时:" + (System.currentTimeMillis() - startTime));
+        socket.close();
     }
 }

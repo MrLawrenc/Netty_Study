@@ -42,6 +42,7 @@ public class Server_Client_Handler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object s) throws Exception {
+
         System.out.println("中转站服务端收到消息 ：" + s);
 
         /**

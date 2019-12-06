@@ -1,4 +1,4 @@
-package com.gtdq.netty.netty.netty05;
+package com.gtdq.netty.netty05;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.DefaultFileRegion;
@@ -20,6 +20,7 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg)
             throws Exception {
+
         File file = new File(msg);
         if (file.exists()) {
             if (!file.isFile()) {
